@@ -24,7 +24,7 @@ import SwiftUI
 // │                                                                               │
 // │ Represents a table felt colour option with gradient and metadata.           │
 // └──────────────────────────────────────────────────────────────────────────────┘
-struct TableFeltColor: Identifiable, Codable, Equatable {
+struct TableFeltColor: Identifiable, Codable, Equatable, Hashable {
 
     // ┌──────────────────────────────────────────────────────────────────────────┐
     // │ PROPERTIES                                                                │
@@ -266,7 +266,7 @@ extension TableFeltColor {
 // │                                                                               │
 // │ Wrapper to make SwiftUI Color Codable for persistence.                      │
 // └──────────────────────────────────────────────────────────────────────────────┘
-struct CodableColor: Codable, Equatable {
+struct CodableColor: Codable, Equatable, Hashable {
     let red: Double
     let green: Double
     let blue: Double

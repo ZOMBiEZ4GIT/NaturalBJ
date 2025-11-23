@@ -24,7 +24,7 @@ import SwiftUI
 // │                                                                               │
 // │ Represents a card back design with pattern and colour scheme.               │
 // └──────────────────────────────────────────────────────────────────────────────┘
-struct CardBackDesign: Identifiable, Codable, Equatable {
+struct CardBackDesign: Identifiable, Codable, Equatable, Hashable {
 
     // ┌──────────────────────────────────────────────────────────────────────────┐
     // │ PROPERTIES                                                                │

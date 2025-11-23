@@ -90,7 +90,6 @@ fastlane/test_output
 iOSInjectionProject/
 
 # Documentation files (excluded per user request)
-*.md
 !README.md
 PHASE_*.md
 blackjack_app_spec.md

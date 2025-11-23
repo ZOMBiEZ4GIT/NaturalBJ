@@ -38,9 +38,8 @@ struct GameView: View {
     // └─────────────────────────────────────────────────────────────────────┘
 
     @StateObject private var viewModel = GameViewModel(
-        numberOfDecks: 6,          // Ruby dealer default (Phase 3 will make this dynamic)
-        startingBankroll: 10000,   // $10,000 AUD default
-        minimumBet: 10             // $10 AUD minimum
+        dealer: .ruby(),           // Ruby dealer default
+        startingBankroll: 10000    // $10,000 AUD default
     )
 
     // UI state for betting slider

@@ -536,8 +536,8 @@ class AchievementManager: ObservableObject {
                 category: .special,
                 tier: .platinum,
                 requiredProgress: 1,
-                isHidden: true,
-                iconName: "🎰"
+                iconName: "🎰",
+                isHidden: true
             ),
             Achievement(
                 id: "marathon_session",
@@ -767,20 +767,20 @@ class AchievementManager: ObservableObject {
         let stats = statsManager.getOverallStats()
 
         // Milestone: Hands played
-        updateProgress(achievementID: "first_hand", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "getting_started", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "half_century", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "century_club", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "seasoned_player", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "high_roller", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "blackjack_veteran", progress: stats.totalHandsPlayed)
-        updateProgress(achievementID: "blackjack_legend", progress: stats.totalHandsPlayed)
+        updateProgress(achievementID: "first_hand", progress: stats.totalHands)
+        updateProgress(achievementID: "getting_started", progress: stats.totalHands)
+        updateProgress(achievementID: "half_century", progress: stats.totalHands)
+        updateProgress(achievementID: "century_club", progress: stats.totalHands)
+        updateProgress(achievementID: "seasoned_player", progress: stats.totalHands)
+        updateProgress(achievementID: "high_roller", progress: stats.totalHands)
+        updateProgress(achievementID: "blackjack_veteran", progress: stats.totalHands)
+        updateProgress(achievementID: "blackjack_legend", progress: stats.totalHands)
 
         // Performance: Wins
         if handResult.isWin {
             updateProgress(achievementID: "first_win", progress: 1)
-            updateProgress(achievementID: "winning_ways", progress: stats.totalHandsWon)
-            updateProgress(achievementID: "champion", progress: stats.totalHandsWon)
+            updateProgress(achievementID: "winning_ways", progress: stats.totalWins)
+            updateProgress(achievementID: "champion", progress: stats.totalWins)
         }
 
         // Performance: Win streaks

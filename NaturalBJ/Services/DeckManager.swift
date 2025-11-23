@@ -43,8 +43,8 @@ class DeckManager: ObservableObject {
     /// Penetration threshold (0.75 = reshuffle at 75%)
     let penetrationThreshold: Double
 
-    /// Animation speed mode
-    @Published var animationSpeed: AnimationSpeed = .normal
+    // Note: Animation speed is now managed by VisualSettingsManager
+    // @Published var animationSpeed: AnimationSpeed = .normal
 
     // ┌─────────────────────────────────────────────────────────────────────┐
     // │ 🏗️ INITIALISER                                                       │
@@ -155,11 +155,9 @@ class DeckManager: ObservableObject {
     // └─────────────────────────────────────────────────────────────────────┘
 
     func dealCardWithAnimation(completion: @escaping (Card?) -> Void) {
-        // Phase 2: Add animation delay based on animationSpeed
-        let delay = animationSpeed.dealDelay
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            completion(self.dealCard())
-        }
+        // Note: Animation is now handled by CardAnimationManager via VisualSettings
+        // For now, deal immediately - proper animation happens in GameAnimationCoordinator
+        completion(self.dealCard())
     }
 
     func dealInitialHandsWithAnimation(completion: @escaping ((Hand, Card, Card)?) -> Void) {
@@ -169,46 +167,7 @@ class DeckManager: ObservableObject {
     }
 }
 
-// ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║ ⚡ ANIMATION SPEED                                                         ║
-// ║                                                                            ║
-// ║ Purpose: Defines animation speed modes for different player preferences   ║
-// ║ Business Context: Some players want instant results, others enjoy the     ║
-// ║                   anticipation of animated dealing. User choice!          ║
-// ╚═══════════════════════════════════════════════════════════════════════════╝
-
-enum AnimationSpeed {
-    case instant
-    case normal
-    case slow
-
-    /// Delay between card deals (in seconds)
-    var dealDelay: Double {
-        switch self {
-        case .instant: return 0.0
-        case .normal: return 0.3
-        case .slow: return 0.6
-        }
-    }
-
-    /// Duration of card flip animation (in seconds)
-    var flipDuration: Double {
-        switch self {
-        case .instant: return 0.0
-        case .normal: return 0.4
-        case .slow: return 0.8
-        }
-    }
-
-    /// Duration of chip count animation (in seconds)
-    var chipAnimationDuration: Double {
-        switch self {
-        case .instant: return 0.0
-        case .normal: return 0.5
-        case .slow: return 1.0
-        }
-    }
-}
+// Note: AnimationSpeed enum is now defined in VisualSettings.swift to avoid duplication
 
 // ╔═══════════════════════════════════════════════════════════════════════════╗
 // ║ 📖 USAGE EXAMPLES                                                          ║
@@ -233,6 +192,6 @@ enum AnimationSpeed {
 // ║       manager.reshuffle()                                                  ║
 // ║   }                                                                         ║
 // ║                                                                            ║
-// ║ Change animation speed:                                                    ║
-// ║   manager.animationSpeed = .instant  // For players who want speed        ║
+// ║ Change animation speed (now via VisualSettingsManager):                   ║
+// ║   VisualSettingsManager.shared.setAnimationSpeed(.fast)                   ║
 // ╚═══════════════════════════════════════════════════════════════════════════╝

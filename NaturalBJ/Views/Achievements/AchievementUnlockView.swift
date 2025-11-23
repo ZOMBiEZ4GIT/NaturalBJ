@@ -235,22 +235,21 @@ struct AchievementUnlockView: View {
 
     /// Trigger haptic feedback for achievement unlock
     private func triggerHapticFeedback() {
-        // Success notification haptic
-        hapticManager.trigger(.notification(.success))
+        // Use blackjack haptic for success
+        hapticManager.playHaptic(.blackjack)
 
         // Additional impact for platinum tier
         if achievement.tier == .platinum {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                hapticManager.trigger(.impact(.heavy))
+                hapticManager.playHaptic(.blackjack)
             }
         }
     }
 
     /// Play unlock sound effect
     private func playUnlockSound() {
-        // Use existing achievement sound if available
-        // Otherwise use a celebratory sound
-        audioManager.playCheer() // Phase 7 audio
+        // Use blackjack sound for achievement unlock
+        audioManager.playBlackjack()
     }
 
     // ╔═══════════════════════════════════════════════════════════════════╗
@@ -429,8 +428,8 @@ struct LevelUpView: View {
     }
 
     private func triggerFeedback() {
-        hapticManager.trigger(.notification(.success))
-        audioManager.playCheer()
+        hapticManager.playHaptic(.blackjack)
+        audioManager.playBlackjack()
     }
 }
 

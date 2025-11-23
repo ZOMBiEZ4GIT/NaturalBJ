@@ -69,24 +69,22 @@ struct PlayerProfileView: View {
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showingIconPicker) {
-            if let profile = progressionManager.profile {
-                IconEmojiPickerView(selectedEmoji: Binding(
-                    get: { profile.iconEmoji },
-                    set: { newEmoji in
-                        progressionManager.updateIconEmoji(newEmoji)
-                    }
-                ))
-            }
+            let profile = progressionManager.profile
+            return IconEmojiPickerView(selectedEmoji: Binding(
+                get: { profile.iconEmoji },
+                set: { newEmoji in
+                    progressionManager.updateIconEmoji(newEmoji)
+                }
+            ))
         }
         .sheet(isPresented: $showingNameEditor) {
-            if let profile = progressionManager.profile {
-                DisplayNameEditorView(displayName: Binding(
-                    get: { profile.displayName },
-                    set: { newName in
-                        progressionManager.updateDisplayName(newName)
-                    }
-                ))
-            }
+            let profile = progressionManager.profile
+            return DisplayNameEditorView(displayName: Binding(
+                get: { profile.displayName },
+                set: { newName in
+                    progressionManager.updateDisplayName(newName)
+                }
+            ))
         }
         .sheet(isPresented: $showingPersonalBests) {
             PersonalBestsView()
@@ -99,7 +97,8 @@ struct PlayerProfileView: View {
 
     @ViewBuilder
     private var profileHeader: some View {
-        if let profile = progressionManager.profile {
+        Group {
+            let profile = progressionManager.profile
             VStack(spacing: 16) {
                 // Icon (tappable)
                 Button {
@@ -196,7 +195,8 @@ struct PlayerProfileView: View {
 
     @ViewBuilder
     private var quickStatsSection: some View {
-        if let profile = progressionManager.profile {
+        Group {
+            let profile = progressionManager.profile
             VStack(alignment: .leading, spacing: 12) {
                 Text("Quick Stats")
                     .font(.headline)
@@ -430,7 +430,8 @@ struct PlayerProfileView: View {
 
     @ViewBuilder
     private var recentAchievementsSection: some View {
-        if let profile = progressionManager.profile {
+        Group {
+            let profile = progressionManager.profile
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Text("Recent Achievements")
@@ -467,11 +468,11 @@ struct PlayerProfileView: View {
 
     private func achievementCard(achievement: Achievement) -> some View {
         HStack(spacing: 12) {
-            Text(achievement.tier.emoji)
+            Text(achievement.tier.medal)
                 .font(.title2)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(achievement.title)
+                Text(achievement.name)
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
@@ -500,7 +501,8 @@ struct PlayerProfileView: View {
 
     @ViewBuilder
     private var privacySettingsSection: some View {
-        if let profile = progressionManager.profile {
+        Group {
+            let profile = progressionManager.profile
             VStack(alignment: .leading, spacing: 12) {
                 Text("Privacy & Sharing")
                     .font(.headline)
@@ -584,7 +586,7 @@ struct PlayerProfileView: View {
     }
 
     private func getRecentAchievements() -> [Achievement] {
-        guard let profile = progressionManager.profile else { return [] }
+        let profile = progressionManager.profile
 
         let unlocked = achievementManager.achievements.filter {
             profile.achievementUnlockDates[$0.id] != nil

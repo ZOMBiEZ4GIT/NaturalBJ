@@ -9,6 +9,7 @@
 import Foundation
 import SwiftUI
 import UIKit
+import Combine
 
 // ═══════════════════════════════════════════════════════════════════════════════════
 // MARK: - Sharing Manager
@@ -45,19 +46,19 @@ class SharingManager: ObservableObject {
 
     /// Offer to share an achievement unlock
     func offerShareAchievement(_ achievement: Achievement) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         let content = ShareContent(
             type: .achievementUnlocked,
             title: "Achievement Unlocked!",
-            message: "I just unlocked '\(achievement.title)' in Natural Blackjack!",
+            message: "I just unlocked '\(achievement.name)' in Natural Blackjack!",
             details: [
-                "Achievement": achievement.title,
+                "Achievement": achievement.name,
                 "Description": achievement.description,
                 "Tier": achievement.tier.rawValue.capitalized,
-                "XP Reward": "+\(achievement.xpReward) XP"
+                "XP Reward": "+\(achievement.tier.xpReward) XP"
             ],
-            iconEmoji: achievement.tier.emoji,
+            iconEmoji: achievement.tier.medal,
             playerName: profile.displayName,
             playerLevel: profile.level,
             playerRank: profile.rankTitle
@@ -68,7 +69,7 @@ class SharingManager: ObservableObject {
 
     /// Offer to share a level up milestone
     func offerShareLevelUp(_ newLevel: Int) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         let content = ShareContent(
             type: .levelUp,
@@ -91,7 +92,7 @@ class SharingManager: ObservableObject {
 
     /// Offer to share a personal best
     func offerSharePersonalBest(category: LeaderboardCategory, score: Double, rank: Int?) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         var message = "I just set a personal best in \(category.displayName): "
         message += formatScore(score, for: category)
@@ -135,7 +136,7 @@ class SharingManager: ObservableObject {
 
     /// Offer to share a session highlight
     func offerShareSessionHighlight(profit: Double, winRate: Double, handsPlayed: Int) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         let profitStr = profit >= 0 ? "+$\(Int(profit))" : "-$\(Int(abs(profit)))"
 
@@ -160,17 +161,20 @@ class SharingManager: ObservableObject {
 
     /// Offer to share a challenge completion
     func offerShareChallengeCompletion(_ challenge: Challenge) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
+
+        // Extract XP reward from rewards array
+        let xpReward = challenge.rewards.first(where: { $0.type == .xp })?.value ?? 0
 
         let content = ShareContent(
             type: .challengeCompletion,
             title: "Challenge Complete!",
-            message: "I just completed the '\(challenge.title)' challenge in Natural Blackjack!",
+            message: "I just completed the '\(challenge.name)' challenge in Natural Blackjack!",
             details: [
-                "Challenge": challenge.title,
+                "Challenge": challenge.name,
                 "Difficulty": challenge.difficulty.rawValue.capitalized,
                 "Type": challenge.type.displayName,
-                "Reward": "+\(challenge.xpReward) XP"
+                "Reward": "+\(xpReward) XP"
             ],
             iconEmoji: challenge.difficulty == .expert ? "🏆" : "🎯",
             playerName: profile.displayName,
@@ -183,7 +187,7 @@ class SharingManager: ObservableObject {
 
     /// Offer to share a streak milestone
     func offerShareStreakMilestone(days: Int) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         let content = ShareContent(
             type: .streakMilestone,
@@ -206,7 +210,7 @@ class SharingManager: ObservableObject {
 
     /// Offer to share rank improvement
     func offerShareRankImprovement(category: LeaderboardCategory, oldRank: Int, newRank: Int) {
-        guard let profile = ProgressionManager.shared.profile else { return }
+        let profile = ProgressionManager.shared.profile
 
         let improvement = oldRank - newRank
 

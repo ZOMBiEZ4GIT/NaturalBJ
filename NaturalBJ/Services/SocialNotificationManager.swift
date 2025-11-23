@@ -109,10 +109,10 @@ class SocialNotificationManager: ObservableObject {
         let notification = SocialNotification(
             type: .achievementUnlocked,
             title: "🏆 Achievement Unlocked!",
-            message: achievement.title,
-            icon: achievement.tier.emoji,
+            message: achievement.name,
+            icon: achievement.tier.medal,
             category: nil,
-            relatedData: ["achievementID": achievement.id, "xpReward": achievement.xpReward]
+            relatedData: ["achievementID": achievement.id, "xpReward": achievement.tier.xpReward]
         )
 
         queueNotification(notification)
@@ -138,13 +138,16 @@ class SocialNotificationManager: ObservableObject {
     func notifyChallengeComplete(_ challenge: Challenge) {
         guard notificationsEnabled else { return }
 
+        // Extract XP reward from rewards array
+        let xpReward = challenge.rewards.first(where: { $0.type == .xp })?.value ?? 0
+
         let notification = SocialNotification(
             type: .challengeCompletion,
             title: "✅ Challenge Complete!",
-            message: challenge.title,
+            message: challenge.name,
             icon: challenge.difficulty == .expert ? "🏆" : "🎯",
             category: nil,
-            relatedData: ["challengeID": challenge.id, "xpReward": challenge.xpReward]
+            relatedData: ["challengeID": challenge.id, "xpReward": xpReward]
         )
 
         queueNotification(notification)

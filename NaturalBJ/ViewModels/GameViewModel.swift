@@ -304,7 +304,7 @@ class GameViewModel: ObservableObject {
         if !statsManager.hasActiveSession {
             statsManager.startSession(
                 dealerName: currentDealer.name,
-                dealerIcon: currentDealer.icon,
+                dealerIcon: currentDealer.avatarName,
                 startingBankroll: bankroll + amount // Add back bet we just deducted
             )
         }
@@ -358,7 +358,7 @@ class GameViewModel: ObservableObject {
             needsReshuffle = false
 
             // Phase 7: Play shuffle sound
-            audioManager.playCardShuffle()
+            audioManager.playSoundEffect(.cardShuffle)
         }
 
         // Deal cards using DeckManager
@@ -925,7 +925,7 @@ class GameViewModel: ObservableObject {
         print("🎰 Dealer plays: \(dealerHand.description)")
 
         // Collect dealer card IDs for animation
-        var dealerCardIDs: [String] = []
+        var dealerCardIDs: [UUID] = []
 
         // ┌─────────────────────────────────────────────────────────────────────┐
         // │ 🤖 DEALER AI - Phase 3: Soft 17 Rule Implementation                 │

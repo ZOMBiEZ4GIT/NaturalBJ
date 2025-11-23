@@ -80,12 +80,12 @@ struct VoiceOverLabels {
     /// - Returns: Full hand description
     static func handDescription(_ hand: Hand) -> String {
         let cards = hand.cards.map { cardDescription($0) }.joined(separator: ", ")
-        let value = hand.isSoft ? "soft \(hand.value)" : "\(hand.value)"
+        let value = hand.isSoft ? "soft \(hand.total)" : "\(hand.total)"
         var description = "Hand with \(hand.cards.count) cards: \(cards). Value: \(value)"
 
         if hand.isBlackjack {
             description += ". Blackjack!"
-        } else if hand.isBusted {
+        } else if hand.isBust {
             description += ". Busted"
         }
 
@@ -206,6 +206,8 @@ struct VoiceOverLabels {
             description = "Blackjack! You won"
         case .bust:
             description = "Bust. You lost"
+        case .dealerBust:
+            description = "Dealer busted. You won"
         case .surrender:
             description = "Surrendered. Half bet returned"
         }

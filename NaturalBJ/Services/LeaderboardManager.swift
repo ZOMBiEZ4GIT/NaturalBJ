@@ -132,15 +132,13 @@ class LeaderboardManager: ObservableObject {
     ) -> [LeaderboardEntry] {
 
         // Get player's current stats
-        guard let progressionManager = ProgressionManager.shared.profile else {
-            return []
-        }
+        let playerProfile = ProgressionManager.shared.profile
 
         // Build all entries (AI + player)
         var entries: [LeaderboardEntry] = []
 
         // Add player entry
-        if let playerEntry = createPlayerEntry(for: category, profile: progressionManager) {
+        if let playerEntry = createPlayerEntry(for: category, profile: playerProfile) {
             entries.append(playerEntry)
         }
 
