@@ -1,57 +1,33 @@
 //
 //  ContentView.swift
-//  NaturalBJ
+//  Natural - Modern Blackjack
 //
-//  Created by Roland on 23/11/2025.
+//  Created by Claude Code
+//  Updated for Phase 1: Foundation Setup
 //
+
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║ 🏠 CONTENT VIEW - App Entry Point                                         ║
+// ║                                                                            ║
+// ║ Purpose: Root view of the app, currently displays GameView                ║
+// ║ Business Context: This is the entry point for the app. For Phase 1,       ║
+// ║                   we're directly showing the GameView to iterate on        ║
+// ║                   design. Later phases will add welcome screen, dealer     ║
+// ║                   selection, etc.                                          ║
+// ║                                                                            ║
+// ║ Phase 1: Direct to GameView                                                ║
+// ║ Phase 2+: Will add navigation, welcome screen, dealer selection           ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
 
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+        // For Phase 1, go straight to the game view
+        // Later phases will add proper navigation structure
+        GameView()
     }
 }
 

@@ -23,9 +23,20 @@ struct NaturalBJApp: App {
         }
     }()
 
+    // ┌─────────────────────────────────────────────────────────────────────┐
+    // │ 🎨 PHASE 7: VISUAL SETTINGS MANAGER                                  │
+    // │                                                                      │
+    // │ Purpose: Inject visual settings into the environment for all views  │
+    // │ This allows any view to access table colours, card backs, animation │
+    // │ preferences, and visual effects settings                            │
+    // └─────────────────────────────────────────────────────────────────────┘
+
+    @StateObject private var visualSettings = VisualSettingsManager.shared
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(visualSettings)
         }
         .modelContainer(sharedModelContainer)
     }
