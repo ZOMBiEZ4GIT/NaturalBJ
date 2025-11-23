@@ -39,6 +39,7 @@ struct SettingsView: View {
     // │ 🔗 DEPENDENCIES                                                       │
     // └──────────────────────────────────────────────────────────────────────┘
 
+    @ObservedObject private var appState = AppStateManager.shared
     @ObservedObject private var tutorialManager = TutorialManager.shared
     @Environment(\.dismiss) private var dismiss
 
@@ -69,6 +70,7 @@ struct SettingsView: View {
 
     @State private var showHelp = false
     @State private var showReplayConfirmation = false
+    @State private var showDealerSelection = false
     @State private var tutorialHintsEnabled: Bool
     @State private var contextualHintsEnabled: Bool
 
@@ -89,14 +91,14 @@ struct SettingsView: View {
     var body: some View {
         NavigationView {
             List {
+                // Current Dealer section - PRIORITY PLACEMENT
+                currentDealerSection
+
                 // Tutorial & Help section
                 tutorialHelpSection
 
-                // Phase 8: Achievements & Progression section
-                achievementsSection
-
-                // Phase 9: Daily Challenges & Events section
-                challengesSection
+                // Gameplay section
+                gameplaySection
 
                 // Phase 7: Visual Settings section
                 visualSettingsSection
@@ -107,8 +109,8 @@ struct SettingsView: View {
                 // Phase 7: Haptic Settings section
                 hapticSettingsSection
 
-                // Gameplay section
-                gameplaySection
+                // Phase 8-10: Progress Hub (Achievements, Challenges, Social)
+                progressHubSection
 
                 // About section
                 aboutSection
@@ -130,6 +132,15 @@ struct SettingsView: View {
         .sheet(isPresented: $showHelp) {
             HelpView()
         }
+        .sheet(isPresented: $showDealerSelection) {
+            SimpleDealerSelectionView(
+                currentDealer: appState.selectedDealer,
+                onDealerSelected: { dealer in
+                    appState.setDealer(dealer)
+                    showDealerSelection = false
+                }
+            )
+        }
         .alert("Replay Tutorial?", isPresented: $showReplayConfirmation) {
             Button("Cancel", role: .cancel) {}
             Button("Start Tutorial") {
@@ -137,6 +148,55 @@ struct SettingsView: View {
             }
         } message: {
             Text("This will restart the tutorial from the beginning. Your game progress will not be affected.")
+        }
+    }
+
+    // ┌──────────────────────────────────────────────────────────────────────┐
+    // │ 🎲 CURRENT DEALER SECTION                                            │
+    // │                                                                       │
+    // │ Core app feature - dealer selection now PROMINENTLY PLACED           │
+    // └──────────────────────────────────────────────────────────────────────┘
+
+    private var currentDealerSection: some View {
+        Section {
+            // Current dealer display with avatar
+            HStack(spacing: 12) {
+                DealerAvatarView(dealer: appState.selectedDealer, size: .standard)
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(appState.selectedDealer.tagline)
+                        .font(.caption)
+                        .foregroundColor(.mediumGrey)
+                        .multilineTextAlignment(.trailing)
+
+                    Text("House Edge: ~\(String(format: "%.2f", appState.selectedDealer.rules.estimatedHouseEdge))%")
+                        .font(.caption2)
+                        .foregroundColor(.mediumGrey)
+                }
+            }
+            .padding(.vertical, 8)
+
+            // Change dealer button
+            Button(action: {
+                showDealerSelection = true
+            }) {
+                HStack {
+                    Image(systemName: "person.2.fill")
+                        .foregroundColor(.info)
+                    Text("Change Dealer")
+                        .foregroundColor(.white)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption)
+                        .foregroundColor(.mediumGrey)
+                }
+            }
+        } header: {
+            Text("Current Dealer")
+        } footer: {
+            Text("Each dealer has unique rules and personality. Changing dealers will start a new shoe but preserve your bankroll.")
         }
     }
 
@@ -213,109 +273,90 @@ struct SettingsView: View {
     }
 
     // ┌──────────────────────────────────────────────────────────────────────┐
-    // │ 🏆 PHASE 8: ACHIEVEMENTS & PROGRESSION SECTION                       │
+    // │ 📈 PHASE 8-10: PROGRESS HUB (Consolidated)                           │
+    // │                                                                       │
+    // │ Replaces separate Achievements and Challenges sections               │
+    // │ Makes Settings cleaner by grouping progression features              │
     // └──────────────────────────────────────────────────────────────────────┘
 
-    private var achievementsSection: some View {
+    private var progressHubSection: some View {
         Section {
-            // Achievements navigation
-            NavigationLink(destination: AchievementsView()) {
+            // Progress & Achievements navigation (consolidated)
+            NavigationLink(destination: ProgressView()) {
                 HStack {
-                    Image(systemName: "trophy.fill")
-                        .foregroundColor(.yellow)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Achievements")
-                            .foregroundColor(.white)
-                        Text("\(achievementManager.unlockedCount)/\(achievementManager.totalAchievements) unlocked")
-                            .font(.caption)
-                            .foregroundColor(.mediumGrey)
+                    ZStack {
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.info, Color.info.opacity(0.6)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 50, height: 50)
+
+                        VStack(spacing: 2) {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(.white)
+
+                            Text("\(progressionManager.currentLevel)")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                        }
                     }
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Progress & Achievements")
+                            .foregroundColor(.white)
+                            .font(.headline)
+
+                        HStack(spacing: 12) {
+                            // Achievements count
+                            HStack(spacing: 4) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.yellow)
+                                Text("\(achievementManager.unlockedCount)/\(achievementManager.totalAchievements)")
+                                    .font(.caption)
+                                    .foregroundColor(.mediumGrey)
+                            }
+
+                            // Challenges count
+                            HStack(spacing: 4) {
+                                Image(systemName: "target")
+                                    .font(.caption2)
+                                    .foregroundColor(.orange)
+                                let activeCount = challengeManager.getAllActiveChallenges().filter { !$0.isCompleted }.count
+                                Text("\(activeCount) active")
+                                    .font(.caption)
+                                    .foregroundColor(.mediumGrey)
+                            }
+
+                            // Streak
+                            HStack(spacing: 4) {
+                                Image(systemName: "flame.fill")
+                                    .font(.caption2)
+                                    .foregroundColor(.red)
+                                Text("\(challengeManager.dailyLoginStreak)d")
+                                    .font(.caption)
+                                    .foregroundColor(.mediumGrey)
+                            }
+                        }
+                    }
+
                     Spacer()
+
                     Image(systemName: "chevron.right")
                         .font(.caption)
                         .foregroundColor(.mediumGrey)
                 }
             }
-
-            // Level & XP display
-            HStack {
-                Image(systemName: "star.fill")
-                    .foregroundColor(.blue)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Level \(progressionManager.currentLevel)")
-                        .foregroundColor(.white)
-                    Text(progressionManager.fullRank)
-                        .font(.caption)
-                        .foregroundColor(.mediumGrey)
-                }
-                Spacer()
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text(progressionManager.formattedTotalXP)
-                        .font(.caption)
-                        .foregroundColor(.info)
-                    if !progressionManager.isMaxLevel {
-                        Text(progressionManager.levelProgressText)
-                            .font(.caption2)
-                            .foregroundColor(.mediumGrey)
-                    }
-                }
-            }
         } header: {
-            Text("Achievements & Progression")
+            Text("Progress & Achievements")
         } footer: {
-            if !progressionManager.isMaxLevel {
-                Text("Earn XP by playing hands, winning, and unlocking achievements to level up.")
-            } else {
-                Text("⭐ You've reached max level! Keep playing to unlock all achievements.")
-            }
-        }
-    }
-
-    // ┌──────────────────────────────────────────────────────────────────────┐
-    // │ 🎯 PHASE 9: DAILY CHALLENGES & EVENTS SECTION                       │
-    // └──────────────────────────────────────────────────────────────────────┘
-
-    private var challengesSection: some View {
-        Section {
-            // Challenges navigation
-            NavigationLink(destination: ChallengesView()) {
-                HStack {
-                    Image(systemName: "target")
-                        .foregroundColor(.orange)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Daily Challenges")
-                            .foregroundColor(.white)
-                        let activeCount = challengeManager.getAllActiveChallenges().filter { !$0.isCompleted }.count
-                        Text("\(activeCount) active challenge\(activeCount == 1 ? "" : "s")")
-                            .font(.caption)
-                            .foregroundColor(.mediumGrey)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundColor(.mediumGrey)
-                }
-            }
-
-            // Daily login streak display
-            HStack {
-                Image(systemName: "flame.fill")
-                    .foregroundColor(.red)
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Daily Login Streak")
-                        .foregroundColor(.white)
-                    Text("\(challengeManager.dailyLoginStreak) day\(challengeManager.dailyLoginStreak == 1 ? "" : "s")")
-                        .font(.caption)
-                        .foregroundColor(.mediumGrey)
-                }
-                Spacer()
-                Text("🔥")
-                    .font(.title2)
-            }
-        } header: {
-            Text("Daily Challenges & Events")
-        } footer: {
-            Text("Complete daily and weekly challenges to earn XP, chips, and exclusive cosmetics. Maintain your login streak for bonus rewards!")
+            Text("View your level, achievements, challenges, and progress. Earn XP to unlock rewards!")
         }
     }
 

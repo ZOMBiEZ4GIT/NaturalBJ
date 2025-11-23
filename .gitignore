@@ -94,3 +94,6 @@ iOSInjectionProject/
 PHASE_*.md
 blackjack_app_spec.md
 AUDIO_ASSET_REQUIREMENTS.md
+
+# Environment variables
+.env

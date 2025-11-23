@@ -3,20 +3,22 @@
 //  Natural - Modern Blackjack
 //
 //  Created by Claude Code
-//  Updated for Phase 1: Foundation Setup
+//  REFACTOR: Now implements proper navigation and onboarding
 //
 
 // ╔═══════════════════════════════════════════════════════════════════════════╗
-// ║ 🏠 CONTENT VIEW - App Entry Point                                         ║
+// ║ 🏠 CONTENT VIEW - App Entry Point & Navigation Controller                ║
 // ║                                                                            ║
-// ║ Purpose: Root view of the app, currently displays GameView                ║
-// ║ Business Context: This is the entry point for the app. For Phase 1,       ║
-// ║                   we're directly showing the GameView to iterate on        ║
-// ║                   design. Later phases will add welcome screen, dealer     ║
-// ║                   selection, etc.                                          ║
+// ║ Purpose: Root view with navigation and onboarding logic                   ║
+// ║ Business Context: Determines first-time vs returning user flow            ║
+// ║                   Shows welcome/onboarding for new users                  ║
+// ║                   Routes to game for returning users                      ║
 // ║                                                                            ║
-// ║ Phase 1: Direct to GameView                                                ║
-// ║ Phase 2+: Will add navigation, welcome screen, dealer selection           ║
+// ║ Flow:                                                                      ║
+// ║ • First Launch: Welcome → Dealer Selection → Game                         ║
+// ║ • Returning: Direct to Game                                               ║
+// ║                                                                            ║
+// ║ Related Spec: Lines 532-541 (First Launch Flow)                           ║
 // ╚═══════════════════════════════════════════════════════════════════════════╝
 
 import SwiftUI
@@ -24,14 +26,49 @@ import SwiftData
 
 struct ContentView: View {
 
+    // ┌─────────────────────────────────────────────────────────────────────┐
+    // │ 🔑 APP STATE                                                         │
+    // │                                                                      │
+    // │ Observes AppStateManager to determine onboarding needs              │
+    // └─────────────────────────────────────────────────────────────────────┘
+
+    @ObservedObject private var appState = AppStateManager.shared
+    @State private var showWelcome = false
+
     var body: some View {
-        // For Phase 1, go straight to the game view
-        // Later phases will add proper navigation structure
-        GameView()
+        ZStack {
+            // Main game view (always rendered)
+            GameView()
+
+            // Welcome/onboarding overlay for first launch
+            if showWelcome {
+                WelcomeView(isPresented: $showWelcome)
+                    .transition(.opacity)
+                    .zIndex(999)
+            }
+        }
+        .onAppear {
+            // Check if this is first launch
+            if appState.isFirstLaunch && !appState.hasCompletedOnboarding {
+                // Small delay for smooth presentation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showWelcome = true
+                    appState.completeFirstLaunch()
+                }
+            }
+        }
     }
 }
 
-#Preview {
+#Preview("Returning User") {
     ContentView()
+        .modelContainer(for: Item.self, inMemory: true)
+}
+
+#Preview("First Launch") {
+    let preview = ContentView()
+    AppStateManager.shared.isFirstLaunch = true
+    AppStateManager.shared.hasCompletedOnboarding = false
+    return preview
         .modelContainer(for: Item.self, inMemory: true)
 }

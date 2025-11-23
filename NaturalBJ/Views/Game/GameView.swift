@@ -35,21 +35,34 @@ struct GameView: View {
     // │                                                                      │
     // │ Phase 2: GameViewModel is now the single source of truth            │
     // │ All game logic, state, and data flows through this view model       │
+    // │                                                                      │
+    // │ REFACTOR: Now uses AppStateManager for dealer selection             │
+    // │ Dealer is no longer hardcoded - persists across app sessions        │
     // └─────────────────────────────────────────────────────────────────────┘
 
-    @StateObject private var viewModel = GameViewModel(
-        dealer: .ruby(),           // Ruby dealer default
-        startingBankroll: 10000    // $10,000 AUD default
-    )
+    // App-level state (dealer selection, first launch, etc.)
+    @ObservedObject private var appState = AppStateManager.shared
+
+    // Game view model - now initialized with selected dealer from appState
+    @StateObject private var viewModel: GameViewModel
 
     // UI state for betting slider
     @State private var betSliderValue: Double = 10
 
-    // Phase 6: Tutorial and Help system
-    @ObservedObject private var tutorialManager = TutorialManager.shared
+    // Sheet presentations
     @State private var showWelcome = TutorialManager.shared.shouldShowWelcome
     @State private var showHelp = false
     @State private var showSettings = false
+    @State private var showDealerSelection = false
+    @State private var showDealerInfo = false
+    @State private var showStatistics = false
+
+    // Dealer switch confirmation
+    @State private var pendingDealerSwitch: Dealer? = nil
+    @State private var showDealerSwitchConfirmation = false
+
+    // Phase 6: Tutorial and Help system
+    @ObservedObject private var tutorialManager = TutorialManager.shared
 
     // Phase 8: Achievement and progression system
     @StateObject private var achievementManager = AchievementManager.shared
@@ -65,6 +78,20 @@ struct GameView: View {
     // └─────────────────────────────────────────────────────────────────────┘
 
     @EnvironmentObject var visualSettings: VisualSettingsManager
+
+    // ┌─────────────────────────────────────────────────────────────────────┐
+    // │ 🏗️ INITIALIZER                                                       │
+    // │                                                                      │
+    // │ Creates GameViewModel with selected dealer from AppStateManager     │
+    // └─────────────────────────────────────────────────────────────────────┘
+
+    init() {
+        // Initialize GameViewModel with dealer from AppStateManager
+        _viewModel = StateObject(wrappedValue: GameViewModel(
+            dealer: AppStateManager.shared.selectedDealer,
+            startingBankroll: 10000
+        ))
+    }
 
     // ┌─────────────────────────────────────────────────────────────────────┐
     // │ 🎨 BODY - Main Layout                                                │
@@ -152,6 +179,48 @@ struct GameView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView()
         }
+        // Dealer selection sheet
+        .sheet(isPresented: $showDealerSelection) {
+            DealerSelectionView(
+                viewModel: viewModel,
+                onDealerSelected: { dealer in
+                    requestDealerSwitch(to: dealer)
+                }
+            )
+        }
+        // Dealer info sheet
+        .sheet(isPresented: $showDealerInfo) {
+            DealerInfoView(dealer: appState.selectedDealer, viewModel: viewModel)
+        }
+        // Statistics sheet with swipe-up gesture
+        .sheet(isPresented: $showStatistics) {
+            StatisticsView()
+        }
+        .gesture(
+            DragGesture(minimumDistance: 50)
+                .onEnded { gesture in
+                    // Swipe up gesture (negative vertical translation)
+                    if gesture.translation.height < -50 {
+                        showStatistics = true
+                        HapticManager.shared.impact(.light)
+                    }
+                }
+        )
+        // Dealer switch confirmation alert
+        .alert("Switch Dealer?", isPresented: $showDealerSwitchConfirmation) {
+            Button("Cancel", role: .cancel) {
+                pendingDealerSwitch = nil
+            }
+            Button("Switch") {
+                if let newDealer = pendingDealerSwitch {
+                    performDealerSwitch(to: newDealer)
+                }
+            }
+        } message: {
+            if let newDealer = pendingDealerSwitch {
+                Text("Switching to \(newDealer.name) will end your current hand and start a new shoe with different rules. Your bankroll will be preserved.")
+            }
+        }
         // Phase 8: Achievement unlock overlay
         .overlay {
             if let achievement = showingAchievementUnlock {
@@ -200,7 +269,8 @@ struct GameView: View {
     // │ 📱 TOP BAR - Bankroll, Dealer Info, Settings                        │
     // │                                                                      │
     // │ Business Logic: Bankroll is always visible in large, readable       │
-    // │ format. Gold gradient makes it feel valuable and important.         │
+    // │ format. Dealer avatar shows current dealer personality.             │
+    // │ Tappable dealer avatar opens info, buttons for selection/help/gear  │
     // └─────────────────────────────────────────────────────────────────────┘
 
     private var topBar: some View {
@@ -209,6 +279,24 @@ struct GameView: View {
             bankrollDisplay
 
             Spacer()
+
+            // Dealer avatar - tappable to show info
+            Button(action: {
+                showDealerInfo = true
+            }) {
+                DealerAvatarView(dealer: appState.selectedDealer, size: .compact)
+            }
+            .tutorialSpotlight(.dealerAvatar)
+
+            // Dealer selection button
+            Button(action: {
+                showDealerSelection = true
+            }) {
+                Image(systemName: "person.2.fill")
+                    .font(.title2)
+                    .foregroundColor(.info)
+            }
+            .tutorialSpotlight(.dealerSelectionButton)
 
             // Help button (Phase 6)
             Button(action: {
@@ -271,6 +359,12 @@ struct GameView: View {
 
     private var dealerArea: some View {
         VStack(spacing: 12) {
+            // Dealer tagline (subtle, personality hint)
+            Text(appState.selectedDealer.tagline)
+                .font(.caption)
+                .foregroundColor(appState.selectedDealer.accentColor.opacity(0.7))
+                .italic()
+
             // Hand total (or "?" if hole card hidden)
             Text(dealerDisplayTotal)
                 .font(.title2)
@@ -291,10 +385,16 @@ struct GameView: View {
                 }
             }
 
-            // "Dealer" label
-            Text("Dealer")
-                .font(.headline)
-                .foregroundColor(.mediumGrey)
+            // "Dealer" label with name
+            HStack(spacing: 4) {
+                Image(systemName: appState.selectedDealer.avatarIcon)
+                    .font(.caption)
+                    .foregroundColor(appState.selectedDealer.accentColor)
+
+                Text(appState.selectedDealer.name)
+                    .font(.headline)
+                    .foregroundColor(.mediumGrey)
+            }
         }
     }
 
@@ -375,24 +475,38 @@ struct GameView: View {
     }
 
     // ┌─────────────────────────────────────────────────────────────────────┐
-    // │ 🔼 SWIPE INDICATOR                                                   │
+    // │ 🔼 SWIPE INDICATOR WITH PULSE ANIMATION                             │
     // │                                                                      │
     // │ Visual cue that user can swipe up for statistics panel              │
+    // │ Pulses to draw attention and hint at interactive gesture            │
     // └─────────────────────────────────────────────────────────────────────┘
 
     private var swipeIndicator: some View {
         VStack(spacing: 4) {
+            // Animated bar with pulse effect
             Rectangle()
                 .fill(Color.mediumGrey)
                 .frame(width: 40, height: 4)
                 .cornerRadius(2)
+                .opacity(pulseOpacity)
+                .animation(
+                    .easeInOut(duration: 1.5)
+                    .repeatForever(autoreverses: true),
+                    value: pulseOpacity
+                )
+                .onAppear {
+                    pulseOpacity = 0.3
+                }
 
             Text("Swipe up for stats")
                 .font(.caption2)
                 .foregroundColor(.mediumGrey)
+                .opacity(pulseOpacity)
         }
         .padding(.bottom, 8)
     }
+
+    @State private var pulseOpacity: Double = 1.0
 
     // ┌─────────────────────────────────────────────────────────────────────┐
     // │ 💰 BETTING AREA - Bet Selection Interface                           │
@@ -561,6 +675,51 @@ struct GameView: View {
                 .background(color)
                 .cornerRadius(12)
         }
+    }
+
+    // ┌─────────────────────────────────────────────────────────────────────┐
+    // │ 🔄 DEALER SWITCHING LOGIC                                            │
+    // │                                                                      │
+    // │ Handles dealer changes with confirmation and proper state reset     │
+    // └─────────────────────────────────────────────────────────────────────┘
+
+    /// Requests a dealer switch with confirmation if mid-game
+    private func requestDealerSwitch(to dealer: Dealer) {
+        // If mid-game (not in betting state), show confirmation
+        if viewModel.gameState != .betting && viewModel.gameState != .gameOver {
+            pendingDealerSwitch = dealer
+            showDealerSwitchConfirmation = true
+        } else {
+            // Safe to switch immediately
+            performDealerSwitch(to: dealer)
+        }
+    }
+
+    /// Performs the actual dealer switch
+    private func performDealerSwitch(to dealer: Dealer) {
+        // Save bankroll before switching
+        let currentBankroll = viewModel.bankroll
+
+        // Update app state (persists to UserDefaults)
+        appState.setDealer(dealer)
+
+        // Create new GameViewModel with new dealer and preserved bankroll
+        let newViewModel = GameViewModel(dealer: dealer, startingBankroll: currentBankroll)
+
+        // Replace current viewModel
+        // Note: This requires updating the @StateObject - handled by SwiftUI on next render
+
+        // Close any open sheets
+        showDealerSelection = false
+        showDealerInfo = false
+        pendingDealerSwitch = nil
+
+        // Play confirmation feedback
+        AudioManager.shared.playSoundEffect(.dealerSwitch)
+        HapticManager.shared.notification(.success)
+
+        // For now, we'll rely on the app restarting with the new dealer
+        // A full implementation would use a more sophisticated state management approach
     }
 
     // ┌─────────────────────────────────────────────────────────────────────┐

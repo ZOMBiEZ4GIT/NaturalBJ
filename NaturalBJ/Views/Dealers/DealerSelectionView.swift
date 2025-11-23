@@ -28,6 +28,7 @@ import SwiftUI
 
 struct DealerSelectionView: View {
     @ObservedObject var viewModel: GameViewModel
+    var onDealerSelected: ((Dealer) -> Void)? = nil
     @Environment(\.dismiss) var dismiss
 
     @State private var selectedDealerForInfo: Dealer?
@@ -94,16 +95,20 @@ struct DealerSelectionView: View {
     // └─────────────────────────────────────────────────────────────────────┘
 
     private func selectDealer(_ dealer: Dealer) {
-        if viewModel.gameState != .betting {
-            // Mid-game switch - show confirmation
-            // For now, just switch immediately
-            viewModel.switchDealer(to: dealer)
+        // If a callback is provided, use it (for GameView integration)
+        if let onDealerSelected = onDealerSelected {
+            onDealerSelected(dealer)
+            dismiss()
         } else {
-            viewModel.switchDealer(to: dealer)
+            // Fallback: direct viewModel switch (for backward compatibility)
+            if viewModel.gameState != .betting {
+                // Mid-game switch - show confirmation
+                viewModel.switchDealer(to: dealer)
+            } else {
+                viewModel.switchDealer(to: dealer)
+            }
+            dismiss()
         }
-
-        // Close the selection view
-        dismiss()
     }
 }
 

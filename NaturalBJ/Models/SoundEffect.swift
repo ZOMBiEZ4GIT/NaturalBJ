@@ -78,6 +78,9 @@ enum SoundEffect: String, CaseIterable, Identifiable {
     /// Smooth slide for dealer selection
     case dealerSelect = "dealer_select"
 
+    /// Transition sound for dealer switch
+    case dealerSwitch = "dealer_switch"
+
     /// Confirmation tone for actions
     case confirm = "confirm"
 
@@ -106,6 +109,7 @@ enum SoundEffect: String, CaseIterable, Identifiable {
         case .bust: return "Bust"
         case .buttonTap: return "Button Tap"
         case .dealerSelect: return "Dealer Select"
+        case .dealerSwitch: return "Dealer Switch"
         case .confirm: return "Confirm"
         case .warning: return "Warning"
         }
